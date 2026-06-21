@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrackMotion — Match the Move</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════ SETUP PANEL ══ -->
+  <div id="setup-panel" class="panel">
+    <header class="app-header">
+      <h1>🏃 TrackMotion</h1>
+      <p class="tagline">Mirror the moves. Beat your score.</p>
+    </header>
+
+    <div class="setup-card">
+      <ol class="step-list">
+
+        <li class="step" id="step-share">
+          <div class="step-left">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <strong>Share a browser tab</strong>
+              <span class="step-hint">
+                Open a dance or exercise video in another tab, switch back here,
+                then click the button. For best results make the video full-screen
+                in that tab before sharing.
+              </span>
+            </div>
+          </div>
+          <button id="btn-share" class="step-btn">Share Tab</button>
+          <span class="check" id="check-share" aria-label="done">✓</span>
+        </li>
+
+        <li class="step" id="step-camera">
+          <div class="step-left">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <strong>Enable webcam</strong>
+              <span class="step-hint">
+                Stand back so your full body is visible. Good lighting helps.
+              </span>
+            </div>
+          </div>
+          <button id="btn-camera" class="step-btn" disabled>Enable Camera</button>
+          <span class="check" id="check-camera" aria-label="done">✓</span>
+        </li>
+
+        <li class="step" id="step-start">
+          <div class="step-left">
+            <span class="step-num">3</span>
+            <div class="step-body">
+              <strong>Start tracking</strong>
+              <span class="step-hint">
+                Loads the AI pose model (~5 MB) then begins live comparison.
+              </span>
+            </div>
+          </div>
+          <button id="btn-start" class="step-btn primary" disabled>Start Tracking</button>
+        </li>
+
+      </ol>
+
+      <p id="status-msg" class="status-msg" role="status"></p>
+    </div>
+  </div><!-- /setup-panel -->
+
+
+  <!-- ══════════════════════════════════════════════ LOADING OVERLAY ══ -->
+  <div id="loading-overlay" class="overlay hidden" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <p>Loading pose detection model…</p>
+    <p class="loading-sub">This may take a few seconds on first load.</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════ TRACKING PANEL ══ -->
+  <div id="tracking-panel" class="panel hidden">
+
+    <div class="top-bar">
+      <span class="logo-small">🏃 TrackMotion</span>
+      <button id="btn-stop" class="stop-btn">✕ Stop</button>
+    </div>
+
+    <!-- Three-column arena: reference | score | webcam -->
+    <div class="arena">
+
+      <!-- Reference video (shared tab) -->
+      <div class="video-pane" id="ref-pane">
+        <h2 class="pane-label">Reference</h2>
+        <div class="video-wrap">
+          <video id="ref-video" autoplay muted playsinline></video>
+          <canvas id="ref-canvas" class="skeleton-overlay"></canvas>
+        </div>
+        <div class="pose-badge" id="ref-badge">Searching…</div>
+      </div>
+
+      <!-- Centre score column -->
+      <div class="score-col">
+        <div class="score-gauge" id="score-gauge">
+          <svg class="gauge-svg" viewBox="0 0 140 140" aria-hidden="true">
+            <circle class="gauge-track" cx="70" cy="70" r="60"/>
+            <circle class="gauge-fill" id="gauge-fill" cx="70" cy="70" r="60"/>
+          </svg>
+          <div class="gauge-label">
+            <span id="score-value" class="score-value">--</span>
+            <span class="score-unit">%</span>
+          </div>
+        </div>
+        <p id="feedback-text" class="feedback-text">Waiting for poses…</p>
+
+        <!-- Live history graph -->
+        <div class="history-wrap">
+          <canvas id="history-canvas" class="history-canvas"></canvas>
+          <div class="history-axis-labels">
+            <span>100%</span>
+            <span>50%</span>
+            <span>0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Webcam (user) -->
+      <div class="video-pane" id="cam-pane">
+        <h2 class="pane-label">You</h2>
+        <div class="video-wrap mirrored">
+          <video id="cam-video" autoplay muted playsinline></video>
+          <canvas id="cam-canvas" class="skeleton-overlay"></canvas>
+        </div>
+        <div class="pose-badge" id="cam-badge">Searching…</div>
+      </div>
+
+    </div><!-- /arena -->
+
+  </div><!-- /tracking-panel -->
+
+
+  <!-- TensorFlow.js (full bundle) + pose-detection model -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
