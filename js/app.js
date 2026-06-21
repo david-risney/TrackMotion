@@ -48,9 +48,17 @@ const RING_CIRCUM = 2 * Math.PI * 60;
 /* Number of historical score samples to draw */
 const HISTORY_LEN = 180;
 
+/*
+ * Accent hex — must mirror --accent in style.css.
+ * Canvas 2D context cannot resolve CSS custom properties,
+ * so we keep the literal value here as a single source of truth.
+ */
+const ACCENT_HEX  = '#4ecdc4';
+const ACCENT_RGBA = 'rgba(78,205,196,';   // rgb components of ACCENT_HEX, for opacity variants
+
 /* Skeleton colours */
-const REF_COLOR = '#4ecdc4';   // teal  — reference
-const CAM_COLOR = '#ff6b6b';   // coral — user
+const REF_COLOR = ACCENT_HEX;     // reference skeleton uses the accent colour
+const CAM_COLOR = '#ff6b6b';      // coral — user
 
 /* ─────────────────────────────────────────────────────────── */
 
@@ -315,8 +323,8 @@ function drawHistoryGraph() {
 
   /* gradient fill under the line */
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0,   'rgba(78,205,196,.35)');
-  grad.addColorStop(1,   'rgba(78,205,196,.02)');
+  grad.addColorStop(0, ACCENT_RGBA + '.35)');
+  grad.addColorStop(1, ACCENT_RGBA + '.02)');
 
   const toY = v => H - (Math.max(0, Math.min(100, v)) / 100) * H;
   const len = Math.min(hist.length, HISTORY_LEN);
@@ -337,7 +345,7 @@ function drawHistoryGraph() {
 
   /* line */
   ctx.beginPath();
-  ctx.strokeStyle = '#4ecdc4';  /* --accent hex value; canvas doesn't resolve CSS vars */
+  ctx.strokeStyle = ACCENT_HEX;  /* canvas ctx can't resolve CSS vars */
   ctx.lineWidth   = 2;
   ctx.lineJoin    = 'round';
   let drawing = false;
