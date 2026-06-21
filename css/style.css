@@ -186,16 +186,26 @@ button:focus-visible { box-shadow: 0 0 0 3px var(--accent); border-radius: var(-
 
 /* ── Status message ─────────────────────────────────────────── */
 .status-msg {
-  margin-top: 20px;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
   font-size: .85rem;
-  min-height: 2.4em;
-  transition: background var(--transition), color var(--transition);
+  overflow: hidden;
+  max-height: 0;
+  margin-top: 0;
+  transition: max-height var(--transition), margin-top var(--transition),
+              background var(--transition), color var(--transition);
 }
-.status-msg:empty { opacity: 0; }
-.status-msg:not(:empty) { background: var(--surface2); color: var(--text-muted); }
-.status-msg.error { background: rgba(240,69,69,.12); color: var(--red); border: 1px solid rgba(240,69,69,.3); }
+.status-msg:not(:empty) {
+  max-height: 6em;
+  margin-top: 20px;
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+.status-msg.error {
+  background: rgba(240,69,69,.12);
+  color: var(--red);
+  border: 1px solid rgba(240,69,69,.3);
+}
 
 /* ═══════════════════════════════════════════════════════════
    LOADING OVERLAY
