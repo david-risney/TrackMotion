@@ -67,6 +67,7 @@ const state = {
   refStream:      null,   // MediaStream from getDisplayMedia
   camStream:      null,   // MediaStream from getUserMedia
   detector:       null,   // poseDetection.PoseDetector
+  detectorReady:  null,   // Promise<void> — resolves when model is loaded
   running:        false,
   rafId:          null,
   smoothedScore:  null,   // EMA-smoothed score (0-100 or null)
@@ -126,6 +127,36 @@ function videoReady(video) {
     video.addEventListener('loadeddata', resolve, { once: true });
   });
 }
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ── Background model pre-load ─────────────────────────────── */
+
+/**
+ * Start loading the TF.js backend + MoveNet model in the background.
+ * Stores a Promise in state.detectorReady so handleStart can just await it.
+ * Safe to call multiple times — re-uses the existing promise if already started.
+ */
+function preloadDetector() {
+  if (state.detectorReady) return state.detectorReady;
+
+  state.detectorReady = (async () => {
+    await tf.setBackend('webgl');
+    await tf.ready();
+    state.detector = await poseDetection.createDetector(
+      poseDetection.SupportedModels.MoveNet,
+      { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+    );
+  })();
+
+  // If the background load fails, clear the promise so handleStart can retry.
+  state.detectorReady.catch(() => { state.detectorReady = null; });
+
+  return state.detectorReady;
+}
+
+/* Kick off the model load immediately when the page is ready. */
+preloadDetector();
 
 /* ─────────────────────────────────────────────────────────── */
 
@@ -528,27 +559,44 @@ async function handleEnableCamera() {
 
 async function handleStart() {
   dom.btnStart.disabled = true;
-  setStatus('Loading AI model…');
-  show(dom.loadingOverlay);
 
-  try {
-    /* prefer WebGL for GPU-accelerated inference */
-    await tf.setBackend('webgl');
-    await tf.ready();
-
-    state.detector = await poseDetection.createDetector(
-      poseDetection.SupportedModels.MoveNet,
-      { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
-    );
-
-  } catch (err) {
+  /* If the background pre-load is still in progress, wait for it.
+     Show the loading overlay only if we actually have to wait. */
+  if (state.detectorReady) {
+    let settled = false;
+    state.detectorReady.finally(() => { settled = true; });
+    // Give it one microtask tick — if already resolved, settled will be true.
+    await Promise.resolve();
+    if (!settled) {
+      setStatus('Almost ready — finishing model load…');
+      show(dom.loadingOverlay);
+    }
+    try {
+      await state.detectorReady;
+    } catch (err) {
+      hide(dom.loadingOverlay);
+      dom.btnStart.disabled = false;
+      setStatus(`Failed to load model: ${err.message}`, true);
+      // Allow retry by trying to preload again next time.
+      preloadDetector();
+      return;
+    }
     hide(dom.loadingOverlay);
-    dom.btnStart.disabled = false;
-    setStatus(`Failed to load model: ${err.message}`, true);
-    return;
+  } else {
+    /* Pre-load hadn't started (e.g. previous attempt failed and was cleared) —
+       fall back to loading synchronously now. */
+    setStatus('Loading AI model…');
+    show(dom.loadingOverlay);
+    try {
+      await preloadDetector();
+    } catch (err) {
+      hide(dom.loadingOverlay);
+      dom.btnStart.disabled = false;
+      setStatus(`Failed to load model: ${err.message}`, true);
+      return;
+    }
+    hide(dom.loadingOverlay);
   }
-
-  hide(dom.loadingOverlay);
 
   /* transition to tracking view first so layout is available */
   hide(dom.setupPanel);
@@ -580,6 +628,7 @@ function handleStop() {
   /* free TF.js model */
   try { state.detector?.dispose(); } catch (_) { /* ignore */ }
   state.detector = null;
+  state.detectorReady = null;  // cleared so next session re-loads the model
 
   /* reset video elements */
   dom.refVideo.srcObject = null;
@@ -597,6 +646,9 @@ function handleStop() {
 
   show(dom.setupPanel);
   hide(dom.trackingPanel);
+
+  /* restart background pre-load for the next session */
+  preloadDetector();
 }
 
 /* ─────────────────────────────────────────────────────────── */
