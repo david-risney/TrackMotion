@@ -196,17 +196,20 @@ button:focus-visible { box-shadow: 0 0 0 3px var(--accent); border-radius: var(-
 
 /* ── Status message ─────────────────────────────────────────── */
 .status-msg {
-  padding: 10px 14px;
   border-radius: var(--radius-sm);
   font-size: .85rem;
   overflow: hidden;
+  /* default (empty): zero height and no padding so it takes up no space */
   max-height: 0;
+  padding: 0 14px;
   margin-top: 0;
-  transition: max-height var(--transition), margin-top var(--transition),
-              background var(--transition), color var(--transition);
+  transition: max-height var(--transition), padding var(--transition),
+              margin-top var(--transition), background var(--transition),
+              color var(--transition);
 }
 .status-msg:not(:empty) {
   max-height: 6em;
+  padding: 10px 14px;
   margin-top: 20px;
   background: var(--surface2);
   color: var(--text-muted);
